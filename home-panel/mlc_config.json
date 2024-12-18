@@ -1,0 +1,11 @@
+{
+  "ignorePatterns": [
+    {
+      "pattern": "^aidan@timmo"
+    },
+    {
+      "pattern": "https://home-panel.timmo.dev"
+    }
+  ],
+  "retryOn429": true
+}

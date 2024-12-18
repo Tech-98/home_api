@@ -1,0 +1,138 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id         String      @id @default(cuid())
+  username   String      @unique
+  password   String
+  name       String?
+  image      String?
+  dashboards Dashboard[]
+
+  @@index([username], name: "username_unique")
+}
+
+model Dashboard {
+  id            String          @id @default(cuid())
+  position      Int             @default(10)
+  name          String
+  description   String?
+  userId        String
+  user          User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  headerItems   HeaderItem[]
+  homeAssistant HomeAssistant[]
+  sections      Section[]
+
+  @@index([id, userId], name: "id_userId_unique")
+  @@index([userId, position], name: "userId_position_unique")
+}
+
+model HeaderItem {
+  id          String     @id @default(cuid())
+  position    Int        @default(10)
+  type        String
+  dashboardId String?
+  dashboard   Dashboard? @relation(fields: [dashboardId], references: [id])
+}
+
+model Section {
+  id          String    @id @default(cuid())
+  position    Int       @default(10)
+  title       String
+  subtitle    String?
+  width       String
+  dashboardId String
+  dashboard   Dashboard @relation(fields: [dashboardId], references: [id], onDelete: Cascade)
+  widgets     Widget[]
+
+  @@index([id, dashboardId], name: "id_dashboardId_unique")
+  @@index([dashboardId, position], name: "dashboardId_position_unique")
+}
+
+model Widget {
+  id            String                @id @default(cuid())
+  position      Int                   @default(10)
+  type          String
+  title         String?
+  width         String?
+  sectionId     String
+  section       Section               @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  frame         WidgetFrame[]
+  homeAssistant WidgetHomeAssistant[]
+  image         WidgetImage[]
+  markdown      WidgetMarkdown[]
+  checklist     WidgetChecklist[]
+
+  @@index([id, sectionId], name: "id_sectionId_unique")
+  @@index([sectionId, position], name: "sectionId_position_unique")
+}
+
+model WidgetChecklist {
+  widgetId String                @id
+  widget   Widget                @relation(fields: [widgetId], references: [id], onDelete: Cascade)
+  items    WidgetChecklistItem[]
+}
+
+model WidgetChecklistItem {
+  id                String          @id @default(cuid())
+  position          Int             @default(10)
+  content           String
+  checked           Boolean         @default(false)
+  checklist         WidgetChecklist @relation(fields: [checklistWidgetId], references: [widgetId])
+  checklistWidgetId String
+}
+
+model WidgetFrame {
+  widgetId String  @id
+  widget   Widget  @relation(fields: [widgetId], references: [id], onDelete: Cascade)
+  url      String
+  height   String?
+}
+
+model WidgetHomeAssistant {
+  widgetId      String   @id
+  widget        Widget   @relation(fields: [widgetId], references: [id], onDelete: Cascade)
+  entityId      String
+  showName      Boolean?
+  showIcon      Boolean?
+  showState     Boolean?
+  iconColor     String?
+  iconSize      String?
+  secondaryInfo String?
+}
+
+model WidgetImage {
+  widgetId String @id
+  widget   Widget @relation(fields: [widgetId], references: [id], onDelete: Cascade)
+  url      String
+}
+
+model WidgetMarkdown {
+  widgetId String  @id
+  widget   Widget  @relation(fields: [widgetId], references: [id], onDelete: Cascade)
+  content  String?
+}
+
+model HomeAssistant {
+  id           String    @id @default(cuid())
+  name         String?
+  url          String
+  accessToken  String?
+  refreshToken String?
+  clientId     String?
+  expires      BigInt?
+  expiresIn    Int?
+  dashboardId  String    @unique
+  dashboard    Dashboard @relation(fields: [dashboardId], references: [id], onDelete: Cascade)
+
+  @@index([id, dashboardId], name: "ha_id_dashboardId_unique")
+}
